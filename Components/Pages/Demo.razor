@@ -1,0 +1,258 @@
+﻿@using BootstrapBlazorApp2.Server.Data.Models
+@using BootstrapBlazorApp2.Server.Services
+
+@inject IDatabaseService DatabaseService;
+@inject ITesouroNacionalService TesouroNacionalService;
+
+<div class="col-12 col-sm-6 pt-1">
+    <SelectTable TItem="Foo" @bind-Value="@Context.FooTeste" OnQueryAsync="OnFilterQueryAsync" GetTextCallback="@GetTextCallback"
+                 SkipValidate="false" ShowSearch="false" IsPagination="true" PageItemsSource="PageItemsSourceFoo" ShowLabel="true"
+                 DisplayText="Items">
+        <TableColumns Context="cxt">
+            <TableColumn @bind-Field="@cxt.Name" Sortable="true" Filterable="true" Text="@Localizer["Sigla"]" />
+        </TableColumns>
+    </SelectTable>
+</div>
+<div class="row g-2 pt-1">
+    <div class="col-12 col-sm-6 pt-1">
+        <Cascader Color="Color.Primary" Items="@_items" @bind-Value="@Context.ValueCascadeRoot" IsClearable="true" ShowLabel="true" DisplayText="Cascader root" />
+    </div>
+    <div class="col-12 col-sm-6 pt-1">
+        <BootstrapInput readonly @bind-Value="@Context.ValueCascadeRoot" ShowLabel="true" DisplayText="Cascader select" />
+    </div>
+</div>
+<div class="row g-3 pt-1">
+    <div class="col-12 col-sm-4">
+        <MultiSelect Items="@Items1" @bind-Value="@Context.ValueMultiselect" IsPopover="true" ShowSearch="true" ShowToolbar="true" ShowLabel="true" DisplayText="Multiselect"></MultiSelect>
+    </div>
+</div>
+<div class="row g-3 pt-1">
+    <div class="col-12 col-sm-4">
+        <SelectTree TValue="TreeFoo" Items="ItemsTreeFoo" @bind-Value="@Context.ValueTreeFoo" ShowLabel="true" DisplayText="TreeFoo" />
+    </div>
+</div>
+<div class="row g-3 pt-1">
+    <div class="col-12 col-sm-4">
+        <NullSwitch @bind-Value="@Context.ValueNullSwitch" OnColor="Color.Dark" OnText="On" OffText="Off" />
+    </div>
+</div>
+
+<div class="row g-3 pt-1">
+    <div class="col-12 col-sm-4">
+        <Select Items="TipoPessoas" @bind-Value="@Context.ValueTipoPessoa" ShowLabel="true" DisplayText="Type Person"
+                OnSelectedItemChanged="@OnSubTipoPessoa" IsUseActiveWhenValueIsNull="true" />
+    </div>
+    <div class="col-12 col-sm-4">
+        <Select Items="SubTipoPessoas" @bind-Value="@Context.ValueSubTipoPessoa" ShowLabel="true"
+                DisplayText="SubType Person" IsUseActiveWhenValueIsNull="true" />
+    </div>
+</div>
+
+<div class="row g-3 pt-1">
+    <div class="col-12">
+        @if (IsUsingFallbackData)
+        {
+            <Alert Color="Color.Warning" ShowIcon="true">
+                <MessageDisplay Text="⚠️ Dados de exemplo - API do Tesouro Nacional temporariamente indisponível" />
+            </Alert>
+        }
+    </div>
+    <div class="col-12 col-sm-6">
+        <Select Items="AnexosRelatorios" @bind-Value="@Context.ValueAnexoRelatorio" ShowLabel="true" 
+                DisplayText="@GetSelectDisplayText()" ShowSearch="true" IsUseActiveWhenValueIsNull="true" />
+    </div>
+    <div class="col-12 col-sm-6">
+        <BootstrapInput readonly @bind-Value="@Context.ValueAnexoRelatorio" ShowLabel="true" 
+                       DisplayText="Anexo Selecionado" />
+    </div>
+</div>
+
+@code {
+    [Inject]
+    [NotNull]
+    private IStringLocalizer<Foo>? Localizer { get; set; }
+
+    [Parameter, NotNull, EditorRequired]
+    public Foo? Context { get; set; }
+
+    [Parameter, NotNull]
+    public EventCallback<Foo>? ContextChanged { get; set; }
+
+    private static IEnumerable<int> PageItemsSource => new int[] { 20, 40 };
+
+    private static string? GetTextCallback(Foo foo) => foo.Name;
+
+    private readonly int[] PageItemsSourceFoo = [5, 10, 15, 20];
+
+    private IEnumerable<Foo> _filterItemsFoo = default!;
+
+    private List<CascaderItem> _items = [];
+
+    [NotNull]
+    private List<SelectedItem>? Items1 { get; set; }
+
+    [NotNull]
+    private List<Foo>? Items { get; set; }
+
+    private List<TreeViewItem<TreeFoo>> ItemsTreeFoo { get; } = TreeFoo.GetTreeItems();
+
+    
+    protected override async Task OnInitializedAsync()
+    {
+        Items = Foo.GenerateFoo(Localizer);
+        Items1 = GenerateItems();
+        carregarItensCascade();        
+        
+        var tiposTask = carregarTipoPessoa();
+        var anexosTask = carregarAnexosRelatorios();
+        
+        await Task.WhenAll(tiposTask, anexosTask);
+    }
+
+    private Task carregarItensCascade()
+    {
+        _items =
+                 [
+                     new CascaderItem("Melbourne", "Melbourne"),
+                    new CascaderItem("Sydney", "Sydney"),
+                    new CascaderItem("Brisbane", "Brisbane"),
+        ];
+
+        _items[0].AddItem(new CascaderItem("item1_child1", "Brunswick"));
+        _items[0].AddItem(new CascaderItem("item1_child2", "Fitzroy"));
+        _items[0].AddItem(new CascaderItem("item1_child3", "Carlton"));
+        _items[0].AddItem(new CascaderItem("item1_child4", "Thornbury"));
+
+        _items[0].Items.ElementAt(0).AddItem(new CascaderItem("item1_child1_child", "so-and-so street"));
+
+        _items[1].AddItem(new CascaderItem("item2_child1", "Millsons Point"));
+        _items[1].AddItem(new CascaderItem("item2_child2", "Potts Point"));
+        _items[1].AddItem(new CascaderItem("item2_child3", "North Sydney"));
+
+        _items[2].AddItem(new CascaderItem("item3_child1", "Brisbane"));
+        _items[2].AddItem(new CascaderItem("item3_child2", "Gold Cost"));
+
+        return Task.CompletedTask;
+    }
+
+    private IEnumerable<SelectedItem> TipoPessoas { get; set; } = new List<SelectedItem>();
+
+    private async Task carregarTipoPessoa()
+    {
+    List<TipoPessoa>  lstTipoPessoa = await DatabaseService.GetTiposPessoaAsync();
+
+
+        if (lstTipoPessoa != null && lstTipoPessoa.Count > 0)
+        {
+            TipoPessoas = lstTipoPessoa.Select(tp =>
+                new SelectedItem(
+                    tp.Id.ToString(),
+                    tp.Descricao
+                )).ToList();
+        }
+    }
+
+
+    private IEnumerable<SelectedItem> SubTipoPessoas { get; set; } = new List<SelectedItem>();
+
+    private IEnumerable<SelectedItem> AnexosRelatorios { get; set; } = new List<SelectedItem>();
+    
+    private bool IsUsingFallbackData { get; set; } = false;
+
+    private async Task carregarAnexosRelatorios()
+    {
+        try
+        {
+            var anexos = await TesouroNacionalService.GetAnexosRelatoriosAsync();
+            
+            if (anexos != null && anexos.Count > 0)
+            {
+                AnexosRelatorios = anexos.Select(a => new SelectedItem(
+                    a.Valor,
+                    a.DescricaoCompleta
+                )).OrderBy(x => x.Text).ToList();
+                
+                // Verificar se está usando dados de fallback (baseado na quantidade reduzida)
+                IsUsingFallbackData = anexos.Count <= 30; // Dados de fallback têm aproximadamente 25 itens
+            }
+            else
+            {
+                AnexosRelatorios = new List<SelectedItem>();
+                IsUsingFallbackData = true;
+            }
+        }
+        catch (Exception)
+        {
+            // Em caso de erro, manter lista vazia
+            AnexosRelatorios = new List<SelectedItem>();
+            IsUsingFallbackData = true;
+        }
+    }
+
+    private string GetSelectDisplayText()
+    {
+        return IsUsingFallbackData 
+            ? "Anexos Relatórios - Tesouro Nacional (Dados de Exemplo)" 
+            : "Anexos Relatórios - Tesouro Nacional";
+    }
+
+    private async Task OnSubTipoPessoa(SelectedItem item)
+    {
+        List<SubtipoPessoa> lstSubTipoPessoa = await DatabaseService.GetSubtiposByTipoAsync(int.Parse(item.Value));
+
+        if (lstSubTipoPessoa != null && lstSubTipoPessoa.Count > 0)
+        {
+            SubTipoPessoas = lstSubTipoPessoa.Select(tp =>
+                new SelectedItem(
+                    tp.Id.ToString(),
+                    tp.Descricao
+                )).ToList();
+
+            
+        }
+    }
+
+    private async Task<QueryData<Foo>> OnFilterQueryAsync(QueryPageOptions options)
+    {
+        if (_filterItemsFoo == null || _filterItemsFoo.Count() == 0)
+        {
+            _filterItemsFoo = Items;
+        }
+
+        var items = _filterItemsFoo.Where(options.ToFilterFunc<Foo>());
+
+        if (!string.IsNullOrEmpty(options.SortName))
+        {
+            items = items.Sort(options.SortName, options.SortOrder);
+        }
+
+        var count = items.Count();
+        if (options.IsPage)
+        {
+            items = items.Skip((options.PageIndex - 1) * options.PageItems).Take(options.PageItems);
+        }
+
+        return await Task.FromResult(new QueryData<Foo>()
+            {
+                Items = items.ToList(),
+                TotalCount = count,
+                IsAdvanceSearch = true,
+                IsFiltered = true,
+                IsSearch = true,
+                IsSorted = true
+            });
+    }
+
+    private static List<SelectedItem> GenerateItems() =>
+        [
+        new ("Beijing", "北京"),
+        new ("Shanghai", "上海"),
+        new ("Guangzhou", "广州"),
+        new ("Shenzhen", "深圳"),
+        new ("Chengdu", "成都"),
+        new ("Wuhan", "武汉"),
+        new ("Dalian", "大连"),
+        new ("Hangzhou", "杭州"),
+        new ("Lianyungang", "连云港")
+    ];
+}
