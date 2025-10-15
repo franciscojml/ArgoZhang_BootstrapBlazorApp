@@ -100,13 +100,13 @@
     protected override async Task OnInitializedAsync()
     {
         Items = Foo.GenerateFoo(Localizer);
+        
+        await carregarAnexosRelatorios();
+
         Items1 = GenerateItems();
         carregarItensCascade();        
         
-        var tiposTask = carregarTipoPessoa();
-        var anexosTask = carregarAnexosRelatorios();
-        
-        await Task.WhenAll(tiposTask, anexosTask);
+        await carregarTipoPessoa();
     }
 
     private Task carregarItensCascade()

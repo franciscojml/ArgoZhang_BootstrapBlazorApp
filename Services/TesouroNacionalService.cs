@@ -79,7 +79,7 @@ namespace BootstrapBlazorApp2.Server.Services
                 if (attempt == maxRetryAttempts && useFallback)
                 {
                     _logger.LogInformation("Usando dados de fallback após {MaxAttempts} tentativas falhadas", maxRetryAttempts);
-                    return GetFallbackData();
+                    //return GetFallbackData();
                 }
             }
             catch (Exception ex)
@@ -89,7 +89,7 @@ namespace BootstrapBlazorApp2.Server.Services
                 if (attempt == maxRetryAttempts && useFallback)
                 {
                     _logger.LogInformation("Usando dados de fallback após {MaxAttempts} tentativas falhadas", maxRetryAttempts);
-                    return GetFallbackData();
+                    //return GetFallbackData();
                 }
             }
         }
@@ -125,7 +125,7 @@ namespace BootstrapBlazorApp2.Server.Services
         /// Retorna dados de fallback quando a API está indisponível
         /// </summary>
         /// <returns>Lista de anexos de exemplo</returns>
-        private List<AnexoRelatorio> GetFallbackData()
+        /*private List<AnexoRelatorio> GetFallbackData()
         {
             _logger.LogInformation("Retornando dados de fallback para anexos de relatórios");
             
@@ -164,6 +164,6 @@ namespace BootstrapBlazorApp2.Server.Services
                 new() { Esfera = "U", Demonstrativo = "QDCC", Anexo = "RREO-Anexo 01" },
                 new() { Esfera = "U", Demonstrativo = "QDCC", Anexo = "RREO-Anexo 02" }
             };
-        }
+        }*/
     }
 }
